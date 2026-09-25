@@ -1,6 +1,8 @@
 import unittest
 
 from functions import (
+    BlockType,
+    block_to_block_type,
     extract_markdown_images,
     extract_markdown_links,
     split_nodes_delimiter,
@@ -292,6 +294,64 @@ class TestMarkdownToBlocks(unittest.TestCase):
         self.assertListEqual(
             ["- first item\n- second item"],
             markdown_to_blocks(markdown),
+        )
+
+
+class TestBlockToBlockType(unittest.TestCase):
+    def test_identifies_headings(self):
+        self.assertEqual(block_to_block_type("### Heading"), BlockType.HEADING)
+
+    def test_identifies_code_blocks(self):
+        block = "```\nprint('hello')\n```"
+
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+
+    def test_identifies_quote_blocks(self):
+        block = "> first quote\n> second quote"
+
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+
+    def test_identifies_unordered_lists(self):
+        block = "- first item\n- second item"
+
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
+
+    def test_identifies_ordered_lists(self):
+        block = "1. first item\n2. second item\n3. third item"
+
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_identifies_paragraphs(self):
+        self.assertEqual(
+            block_to_block_type("This is a normal paragraph."),
+            BlockType.PARAGRAPH,
+        )
+
+    def test_heading_requires_hashes_followed_by_space(self):
+        self.assertEqual(block_to_block_type("###Heading"), BlockType.PARAGRAPH)
+
+    def test_heading_allows_at_most_six_hashes(self):
+        self.assertEqual(
+            block_to_block_type("####### Too many hashes"),
+            BlockType.PARAGRAPH,
+        )
+
+    def test_code_block_requires_newline_after_opening_fence(self):
+        self.assertEqual(block_to_block_type("```code```"), BlockType.PARAGRAPH)
+
+    def test_quote_requires_every_line_to_start_with_greater_than(self):
+        block = "> quoted line\nnot quoted"
+
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_ordered_list_must_start_at_one_and_increment(self):
+        self.assertEqual(
+            block_to_block_type("2. first item\n3. second item"),
+            BlockType.PARAGRAPH,
+        )
+        self.assertEqual(
+            block_to_block_type("1. first item\n3. skipped item"),
+            BlockType.PARAGRAPH,
         )
 
 

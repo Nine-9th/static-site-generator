@@ -1,7 +1,32 @@
+from enum import Enum
 import re
 
 from textnode import TextNode, TextType
 
+class BlockType(Enum):
+    PARAGRAPH = 1
+    HEADING = 2
+    CODE = 3
+    QUOTE = 4
+    UNORDERED_LIST = 5
+    ORDERED_LIST = 6
+
+def block_to_block_type(block: str) -> BlockType:
+    if re.match(r"^#{1,6} .+", block):
+        return BlockType.HEADING
+    if block.startswith("```\n") and block.endswith("```"):
+        return BlockType.CODE
+    lines = block.splitlines()
+    if lines and all(line.startswith(">") for line in lines):
+        return BlockType.QUOTE
+    if lines and all(line.startswith("- ") for line in lines):
+        return BlockType.UNORDERED_LIST
+    ordered_list = [re.match(r"^(\d+)\. ", line) for line in lines]
+    if lines and all(match is not None for match in ordered_list):
+        numbers = [int(match.group(1)) for match in ordered_list]
+        if numbers == list(range(1, len(numbers) + 1)):
+            return BlockType.ORDERED_LIST
+    return BlockType.PARAGRAPH
 
 def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: TextType) -> list[TextNode]:
     new_nodes = []
