@@ -3,6 +3,7 @@ import unittest
 from functions import (
     BlockType,
     block_to_block_type,
+    markdown_to_html_node,
     extract_markdown_images,
     extract_markdown_links,
     split_nodes_delimiter,
@@ -353,6 +354,54 @@ class TestBlockToBlockType(unittest.TestCase):
             block_to_block_type("1. first item\n3. skipped item"),
             BlockType.PARAGRAPH,
         )
+
+
+class TestMarkdownToHTMLNode(unittest.TestCase):
+    def test_converts_mixed_markdown_document(self):
+        markdown = (
+            "# Heading\n\n"
+            "A **bold** paragraph.\n\n"
+            "> A quote\n> with two lines\n\n"
+            "- First item\n- Second item"
+        )
+
+        self.assertEqual(
+            markdown_to_html_node(markdown).to_html(),
+            "<div>"
+            "<h1>Heading</h1>"
+            "<p>A <b>bold</b> paragraph.</p>"
+            "<blockquote>A quote with two lines</blockquote>"
+            "<ul><li>First item</li><li>Second item</li></ul>"
+            "</div>",
+        )
+
+    def test_converts_code_without_inline_markdown(self):
+        markdown = "```\n**not bold** and _not italic_\n```"
+
+        self.assertEqual(
+            markdown_to_html_node(markdown).to_html(),
+            "<div><pre><code>**not bold** and _not italic_\n</code></pre></div>",
+        )
+
+    def test_converts_ordered_lists(self):
+        markdown = "1. First **item**\n2. Second item"
+
+        self.assertEqual(
+            markdown_to_html_node(markdown).to_html(),
+            "<div><ol><li>First <b>item</b></li><li>Second item</li></ol></div>",
+        )
+
+    def test_converts_links_and_images(self):
+        markdown = "[link](https://example.com) and ![image](image.png)"
+
+        self.assertEqual(
+            markdown_to_html_node(markdown).to_html(),
+            '<div><p><a href="https://example.com">link</a> and '
+            '<img src="image.png" alt="image"></img></p></div>',
+        )
+
+    def test_empty_document_returns_empty_div(self):
+        self.assertEqual(markdown_to_html_node("\n\n").to_html(), "<div></div>")
 
 
 if __name__ == "__main__":
