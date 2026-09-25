@@ -7,6 +7,7 @@ from functions import (
     split_nodes_image,
     split_nodes_link,
     text_to_text_nodes,
+    markdown_to_blocks,
 )
 from textnode import TextNode, TextType
 
@@ -245,6 +246,52 @@ class TestTextToTextNodes(unittest.TestCase):
                 TextNode("two", TextType.BOLD),
             ],
             text_to_text_nodes("one **bold** and **two**"),
+        )
+
+
+class TestMarkdownToBlocks(unittest.TestCase):
+    def test_splits_markdown_into_blocks(self):
+        markdown = (
+            "# This is a heading\n\n"
+            "This is a paragraph of text. It has some **bold** and _italic_ words inside of it.\n\n"
+            "- This is the first list item in a list block\n"
+            "- This is a list item\n"
+            "- This is another list item"
+        )
+
+        self.assertListEqual(
+            [
+                "# This is a heading",
+                "This is a paragraph of text. It has some **bold** and _italic_ words inside of it.",
+                "- This is the first list item in a list block\n"
+                "- This is a list item\n"
+                "- This is another list item",
+            ],
+            markdown_to_blocks(markdown),
+        )
+
+    def test_strips_whitespace_from_each_block(self):
+        markdown = "  first block  \n\n\tsecond block\t  "
+
+        self.assertListEqual(
+            ["first block", "second block"],
+            markdown_to_blocks(markdown),
+        )
+
+    def test_ignores_empty_blocks_from_excessive_newlines(self):
+        markdown = "\n\nfirst block\n\n\n\nsecond block\n\n"
+
+        self.assertListEqual(
+            ["first block", "second block"],
+            markdown_to_blocks(markdown),
+        )
+
+    def test_preserves_single_newlines_inside_a_block(self):
+        markdown = "- first item\n- second item"
+
+        self.assertListEqual(
+            ["- first item\n- second item"],
+            markdown_to_blocks(markdown),
         )
 
 
