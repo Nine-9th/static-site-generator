@@ -325,15 +325,23 @@ class TestGeneratePage(unittest.TestCase):
             destination_path = root / "nested" / "page.html"
             markdown_path.write_text("# Example\n\nHello", encoding="utf-8")
             template_path.write_text(
-                "<html><title>{{ Title }}</title><body>{{ Content }}</body></html>",
+                '<html><title>{{ Title }}</title><body><a href="/about">About</a>'
+                '<img src="/images/example.png">{{ Content }}</body></html>',
                 encoding="utf-8",
             )
 
-            generate_page(str(markdown_path), str(template_path), str(destination_path))
+            generate_page(
+                str(markdown_path),
+                str(template_path),
+                str(destination_path),
+                "/static-site-generator/",
+            )
 
             self.assertEqual(
                 destination_path.read_text(encoding="utf-8"),
-                "<html><title>Example</title><body>"
+                '<html><title>Example</title><body>'
+                '<a href="/static-site-generator/about">About</a>'
+                '<img src="/static-site-generator/images/example.png">'
                 "<div><h1>Example</h1><p>Hello</p></div></body></html>",
             )
 
@@ -354,7 +362,10 @@ class TestGeneratePage(unittest.TestCase):
             )
 
             generate_pages_recursive(
-                str(content_dir), str(template_path), str(destination_dir)
+                str(content_dir),
+                str(template_path),
+                str(destination_dir),
+                "/static-site-generator/",
             )
 
             home_page = (destination_dir / "index.html").read_text(encoding="utf-8")

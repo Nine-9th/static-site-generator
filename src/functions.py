@@ -199,7 +199,9 @@ def extract_title(markdown: str) -> str:
     raise ValueError("Markdown document has no h1 header")
 
 
-def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
+def generate_page(
+    from_path: str, template_path: str, dest_path: str, basepath: str = "/"
+) -> None:
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     with open(from_path, encoding="utf-8") as markdown_file:
@@ -210,6 +212,8 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
     content = markdown_to_html_node(markdown).to_html()
     title = extract_title(markdown)
     page = template.replace("{{ Title }}", title).replace("{{ Content }}", content)
+    page = page.replace('href="/', f'href="{basepath}')
+    page = page.replace('src="/', f'src="{basepath}')
 
     os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
     with open(dest_path, "w", encoding="utf-8") as destination_file:
@@ -217,15 +221,18 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
 
 
 def generate_pages_recursive(
-    dir_path_content: str, template_path: str, dest_dir_path: str
+    dir_path_content: str,
+    template_path: str,
+    dest_dir_path: str,
+    basepath: str = "/",
 ) -> None:
     for entry in os.listdir(dir_path_content):
         from_path = os.path.join(dir_path_content, entry)
         if os.path.isdir(from_path):
             generate_pages_recursive(
-                from_path, template_path, os.path.join(dest_dir_path, entry)
+                from_path, template_path, os.path.join(dest_dir_path, entry), basepath
             )
         elif entry.endswith(".md"):
             dest_filename = os.path.splitext(entry)[0] + ".html"
             dest_path = os.path.join(dest_dir_path, dest_filename)
-            generate_page(from_path, template_path, dest_path)
+            generate_page(from_path, template_path, dest_path, basepath)

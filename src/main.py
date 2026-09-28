@@ -1,10 +1,11 @@
 import os
 import shutil
+import sys
 
 from functions import generate_pages_recursive
 
 
-def copy_static_to_public(source_dir: str, destination_dir: str) -> None:
+def copy_static_to_docs(source_dir: str, destination_dir: str) -> None:
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
 
@@ -27,12 +28,13 @@ def copy_directory(source_dir: str, destination_dir: str) -> None:
 
 def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
     source_dir = os.path.join(project_root, "static")
-    destination_dir = os.path.join(project_root, "public")
-    copy_static_to_public(source_dir, destination_dir)
+    destination_dir = os.path.join(project_root, "docs")
+    copy_static_to_docs(source_dir, destination_dir)
     content_dir = os.path.join(project_root, "content")
     template_path = os.path.join(project_root, "template.html")
-    generate_pages_recursive(content_dir, template_path, destination_dir)
+    generate_pages_recursive(content_dir, template_path, destination_dir, basepath)
 
 if __name__ == "__main__":
     main()
