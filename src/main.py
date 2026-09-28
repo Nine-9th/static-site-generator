@@ -1,6 +1,8 @@
 import os
 import shutil
 
+from functions import generate_page
+
 
 def copy_static_to_public(source_dir: str, destination_dir: str) -> None:
     if os.path.exists(destination_dir):
@@ -28,6 +30,10 @@ def main():
     source_dir = os.path.join(project_root, "static")
     destination_dir = os.path.join(project_root, "public")
     copy_static_to_public(source_dir, destination_dir)
+    content_path = os.path.join(project_root, "content", "index.md")
+    template_path = os.path.join(project_root, "template.html")
+    destination_path = os.path.join(destination_dir, "index.html")
+    generate_page(content_path, template_path, destination_path)
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 from functions import (
     BlockType,
@@ -11,6 +13,8 @@ from functions import (
     split_nodes_link,
     text_to_text_nodes,
     markdown_to_blocks,
+    extract_title,
+    generate_page,
 )
 from textnode import TextNode, TextType
 
@@ -296,6 +300,41 @@ class TestMarkdownToBlocks(unittest.TestCase):
             ["- first item\n- second item"],
             markdown_to_blocks(markdown),
         )
+
+
+class TestExtractTitle(unittest.TestCase):
+    def test_extracts_and_strips_h1_title(self):
+        self.assertEqual(extract_title("#  Hello  \n\n## Not the title"), "Hello")
+
+    def test_ignores_subheadings(self):
+        with self.assertRaises(ValueError):
+            extract_title("## Not an h1")
+
+    def test_raises_when_no_h1_exists(self):
+        with self.assertRaises(ValueError):
+            extract_title("A paragraph without a title")
+
+
+class TestGeneratePage(unittest.TestCase):
+    def test_generates_page_and_creates_destination_directories(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            markdown_path = root / "page.md"
+            template_path = root / "template.html"
+            destination_path = root / "nested" / "page.html"
+            markdown_path.write_text("# Example\n\nHello", encoding="utf-8")
+            template_path.write_text(
+                "<html><title>{{ Title }}</title><body>{{ Content }}</body></html>",
+                encoding="utf-8",
+            )
+
+            generate_page(str(markdown_path), str(template_path), str(destination_path))
+
+            self.assertEqual(
+                destination_path.read_text(encoding="utf-8"),
+                "<html><title>Example</title><body>"
+                "<div><h1>Example</h1><p>Hello</p></div></body></html>",
+            )
 
 
 class TestBlockToBlockType(unittest.TestCase):

@@ -1,4 +1,5 @@
 from enum import Enum
+import os
 import re
 
 from htmlnode import HTMLNode
@@ -190,3 +191,26 @@ def block_to_html_node(block: str) -> HTMLNode:
 def markdown_to_html_node(markdown: str) -> HTMLNode:
     block_nodes = [block_to_html_node(block) for block in markdown_to_blocks(markdown)]
     return ParentNode("div", block_nodes)
+
+def extract_title(markdown: str) -> str:
+    for line in markdown.splitlines():
+        if line.startswith("# "):
+            return line[1:].strip()
+    raise ValueError("Markdown document has no h1 header")
+
+
+def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+
+    with open(from_path, encoding="utf-8") as markdown_file:
+        markdown = markdown_file.read()
+    with open(template_path, encoding="utf-8") as template_file:
+        template = template_file.read()
+
+    content = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+    page = template.replace("{{ Title }}", title).replace("{{ Content }}", content)
+
+    os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+    with open(dest_path, "w", encoding="utf-8") as destination_file:
+        destination_file.write(page)
