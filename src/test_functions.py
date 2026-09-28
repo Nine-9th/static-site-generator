@@ -15,6 +15,7 @@ from functions import (
     markdown_to_blocks,
     extract_title,
     generate_page,
+    generate_pages_recursive,
 )
 from textnode import TextNode, TextType
 
@@ -335,6 +336,34 @@ class TestGeneratePage(unittest.TestCase):
                 "<html><title>Example</title><body>"
                 "<div><h1>Example</h1><p>Hello</p></div></body></html>",
             )
+
+    def test_generates_all_markdown_pages_in_matching_directories(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            content_dir = root / "content"
+            destination_dir = root / "public"
+            (content_dir / "blog").mkdir(parents=True)
+            (content_dir / "index.md").write_text("# Home", encoding="utf-8")
+            (content_dir / "blog" / "post.md").write_text(
+                "# Post", encoding="utf-8"
+            )
+            (content_dir / "notes.txt").write_text("Not a page", encoding="utf-8")
+            template_path = root / "template.html"
+            template_path.write_text(
+                "<title>{{ Title }}</title>{{ Content }}", encoding="utf-8"
+            )
+
+            generate_pages_recursive(
+                str(content_dir), str(template_path), str(destination_dir)
+            )
+
+            home_page = (destination_dir / "index.html").read_text(encoding="utf-8")
+            post_page = (
+                destination_dir / "blog" / "post.html"
+            ).read_text(encoding="utf-8")
+            self.assertIn("<title>Home</title>", home_page)
+            self.assertIn("<title>Post</title>", post_page)
+            self.assertFalse((destination_dir / "notes.html").exists())
 
 
 class TestBlockToBlockType(unittest.TestCase):
